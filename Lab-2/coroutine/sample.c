@@ -16,7 +16,7 @@
 	"movl %[stackptr], %%esp"    /* SP <- stackptr */
 #elif defined(__x86_64__)
 #define SAVE_STACK_POINTER_ASM(savedstack, stackptr) \
-	"movq %%rsp, %[savedstack]\n" /* savedstack <- SP */
+	"movq %%rsp, %[savedstack]\n" /* savedstack <- SP */ \
 	"movq %[stackptr], %%rsp"    /* SP <- stackptr */
 #else
 #error "Unsupported architecture!"
