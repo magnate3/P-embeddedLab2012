@@ -1,0 +1,4 @@
+# Set up canonical environment variables
+
+export PATH=/usr/local/csl/arm-2012.03/bin:$PATH
+export EDITOR=vim
