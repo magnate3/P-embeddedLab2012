@@ -1,0 +1,20 @@
+Lab materials for Embedded System Lecture in NCKU, Taiwan
+
+OVERVIEW
+This suite contains a number of small, simple demo programs for exercising the
+various peripherals of the ARM Cortex-M derived Microcontroller.
+
+REFERENCES
+Lecture schedule and materials
+    http://wiki.csie.ncku.edu.tw/
+
+ST Microelectronics STM32 website
+    http://www.st.com/stm32
+
+ARM "Cortex-M3 Technical Reference Manual"
+"ARM v7-M Architecture Application Level Reference Manual"
+"ARM v7-M Architecture Reference Manual"
+
+ARM "ELF for the ARM Architecture"
+
+ARM "Thumb Instruction Set Quick Reference Card"
