@@ -9,7 +9,9 @@
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
-#include <string.h>
+
+/* Our own string function implementation */
+#include "string-util.h"
 
 static void setup_hardware();
 
@@ -134,7 +136,7 @@ void queue_str_task(const char *str, int delay)
 	serial_str_msg msg;
 
 	/* Prepare the message to be queued. */
-	strcpy(msg.str, str);
+	my_strcpy(msg.str, str);
 
 	while (1) {
 		/* Post the message.  Keep on trying until it is successful. */
@@ -164,7 +166,7 @@ void serial_readwrite_task(void *pvParameters)
 	int done;
 
 	/* Prepare the response message to be queued. */
-	strcpy(msg.str, "Got:");
+	my_strcpy(msg.str, "Got:");
 
 	while (1) {
 		curr_char = 4;

@@ -17,8 +17,13 @@ FREERTOS_PORT_INC = $(FREERTOS_SRC)/portable/GCC/ARM_$(ARCH)/
 
 all: main.bin
 
-main.bin: main.c
+main.bin: main.c string-util.c stm32_p103.c \
+		$(FREERTOS_SRC)/tasks.c \
+		$(FREERTOS_SRC)/croutine.c \
+		$(FREERTOS_SRC)/queue.c \
+		$(FREERTOS_SRC)/list.c
 	$(CROSS_COMPILE)gcc \
+		-std=gnu99 \
 		-Wl,-Tmain.ld -nostartfiles \
 		-I. -I$(FREERTOS_INC) -I$(FREERTOS_PORT_INC) \
 		-I$(LIBDIR)/libraries/CMSIS/CM3/CoreSupport \
@@ -46,6 +51,7 @@ main.bin: main.c
 		$(FREERTOS_SRC)/portable/MemMang/heap_1.c \
 		\
 		stm32_p103.c \
+		string-util.c \
 		main.c
 	$(CROSS_COMPILE)objcopy -Obinary main.elf main.bin
 	$(CROSS_COMPILE)objdump -S main.elf > main.list
