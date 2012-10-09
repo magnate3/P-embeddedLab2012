@@ -23,4 +23,6 @@ void enable_rs232_interrupts(void);
 
 void enable_rs232(void);
 
+void enable_button_interrupts(void);
+
 #endif /* __STM32_P103_H */

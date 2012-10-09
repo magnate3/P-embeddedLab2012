@@ -1,6 +1,9 @@
 #define USE_STDPERIPH_DRIVER
 #include "stm32f10x.h"
 
+/* STM32F10x common functions */
+#include "stm32_p103.h"
+
 /* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
