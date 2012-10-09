@@ -48,10 +48,10 @@ main.bin: main.c
 	$(CROSS_COMPILE)objcopy -Obinary main.elf main.bin
 	$(CROSS_COMPILE)objdump -S main.elf > main.list
 
-qemu: main.bin
+qemu: main.bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 -kernel main.bin
 
-qemudbg: main.bin
+qemudbg: main.bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-gdb tcp::3333 -S \
 		-kernel main.bin
