@@ -9,13 +9,14 @@ emulate () {
 	$QEMU_STM32 \
 		-M stm32-p103 \
 		-kernel $1 \
-		-serial stdio \
+		-chardev stdio,id=mux,mux=on \
+		-serial chardev:mux \
 		-parallel none \
 		-monitor tcp:localhost:4444,server,nowait <&0 & pid=$!
 }
 
 stm32_qemu () {
-	emulate $1 <<< "
+	emulate $1	<<< "
 $CMDS
 "
 	echo "Modeling STM32 in QEMU..."
@@ -29,4 +30,4 @@ $CMDS
 	kill $timer
 }
 
-stm32_qemu $1 15
+stm32_qemu $1 350
