@@ -1,5 +1,5 @@
 all:
-	gcc -Wall -fprofile-arcs -ftest-coverage hello.c -o hello
+	gcc -Wall --coverage -g hello.c -o hello
 
 run:
 	killall -9 hello 2>/dev/null
