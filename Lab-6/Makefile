@@ -13,4 +13,4 @@ clean:
 	$(MAKE) -C discoveryF4 clean
 	$(MAKE) -C hello-stm32 clean
 	$(MAKE) -C neocon clean
-	rm -f unit-test
+	rm -f unit-test temp.txt
