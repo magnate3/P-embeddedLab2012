@@ -1,6 +1,12 @@
 OPENOCD_BIN ?= /opt/openocd/bin/openocd
+CROSS_COMPILE=arm-none-eabi-
 
-all: openocd
+all: openocd factorial
 
 openocd:
 	$(OPENOCD_BIN) -f stm32f4-discovery.cfg
+
+factorial:
+	$(CROSS_COMPILE)gcc -v -mcpu=cortex-m3 -mthumb \
+		-o factorial factorial.c \
+		-T generic-hosted.ld
