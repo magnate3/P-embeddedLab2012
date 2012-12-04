@@ -11,5 +11,8 @@ factorial: factorial.c
 		-o factorial factorial.c \
 		-T generic-hosted.ld
 
+auto:
+	@echo "Remove this line and do your homework!"
+
 clean:
 	rm -f factorial
