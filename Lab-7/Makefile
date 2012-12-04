@@ -6,7 +6,7 @@ all: openocd factorial
 openocd:
 	$(OPENOCD_BIN) -f stm32f4-discovery.cfg
 
-factorial:
+factorial: factorial.c
 	$(CROSS_COMPILE)gcc -v -mcpu=cortex-m3 -mthumb \
 		-o factorial factorial.c \
 		-T generic-hosted.ld
