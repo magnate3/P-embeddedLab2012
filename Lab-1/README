@@ -1,0 +1,2 @@
+1. set your STM32_DEMOS_PATH to your stm32_p103_demos path and QEMU_ARM_DIR to your qemu_stm32/arm-softmmu path
+2. make lab1_1_QEMURUN
