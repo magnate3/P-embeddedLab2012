@@ -26,6 +26,8 @@ $(CMSIS_LIB)/DeviceSupport/$(VENDOR)/$(PLAT)/startup/gcc_ride7/startup_stm32f10x
 $(STM32_LIB)/src/stm32f10x_rcc.c \
 $(STM32_LIB)/src/stm32f10x_gpio.c \
 $(STM32_LIB)/src/stm32f10x_usart.c \
+$(STM32_LIB)/src/stm32f10x_exti.c \
+$(STM32_LIB)/src/misc.c \
 \
 		main.c
 	$(CROSS_COMPILE)objcopy -Obinary main.elf main.bin
