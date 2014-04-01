@@ -3,7 +3,6 @@
 QEMU_STM32=../qemu_stm32/arm-softmmu/qemu-system-arm
 
 CUR=`dirname $0`
-CMDS=`sed -n -e 's/\(^[^#].*\)/\1/p' test.script`
 
 emulate () {
 	$QEMU_STM32 \
@@ -11,13 +10,12 @@ emulate () {
 		-kernel $1 \
 		-serial stdio \
 		-parallel none \
+		-nographic \
 		-monitor tcp:localhost:4444,server,nowait <&0 & pid=$!
 }
 
 stm32_qemu () {
-	emulate $1	<<< "
-$CMDS
-"
+	emulate $1	
 	echo "Modeling STM32 in QEMU..."
 	(sleep $2; kill $pid; sleep 1; kill -KILL $pid)& timer=$!
 	if ! wait $pid; then
