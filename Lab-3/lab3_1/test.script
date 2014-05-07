@@ -1,6 +1,7 @@
 file main.elf
 target remote :3333
 set logging file gdb.log
+set logging overwrite on
 set logging on
 
 b main
