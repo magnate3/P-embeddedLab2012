@@ -64,6 +64,8 @@ qemuauto: main.bin $(QEMU_STM32)
 	arm-none-eabi-gdb -x test.script
 	kill -9 `cat qemu.pid`
 	rm -f qemu.pid
+	python gdb2vcd.py
+	gtkwave sched.vcd
 
 emu: main.bin
 	bash emulate.sh main.bin
