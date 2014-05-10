@@ -56,12 +56,14 @@ char ROT13(char c){
 
 
 char my_strcmp(char *restrict dest, const char *restrict src){
+//{{{	
 	unsigned char *s = src;
 	unsigned char *d = dest;
 	while( (*s!='\0')  && (*d!='\0') && (*s==*d) ){s++; d++;}
 
 	if( (*s=='\0') && (*d=='\0') ) return 0;
 	return -1;
+//}}}	
 }
 
 void save_str_in_list(char* str_ptr){
@@ -112,15 +114,98 @@ void save_str_in_list(char* str_ptr){
 
 void save_strtok(serial_str_msg* str_ptr){
 //{{{	
-	char* tmp_str_ptr = NULL;
+	char* str_pos_ptr = NULL;
+	char* str_tok_ptr = NULL;
 
 	if(!str_ptr) return;
 
-	while(!str_ptr){
-		tmp_str_ptr = my_strtok(str_ptr->str, " ");
-		save_str_in_list(tmp_str_ptr);
-	};
+	str_pos_ptr = str_ptr->str;
+	str_tok_ptr = my_strtok(str_pos_ptr, " ");
+
+	do{
+		save_str_in_list(str_tok_ptr);		
+		str_tok_ptr = my_strtok(NULL, " ");
+	}while(str_tok_ptr);
 //}}}	
+}
+int char_cnt(char* c){
+	char* head = c;
+	while( *c++ != '\0');
+	return (int)(c-head);
+}
+void atos(int a, char* str, int buf_len){
+//{{{	
+	int buf_ptr=0;
+	if(buf_len==0) return;
+	if(a == 0) str[buf_ptr++] = '0';
+	for ( ; (buf_ptr<buf_len) && a; a /= 10)
+		str[buf_ptr++] = "0123456789"[a%10];
+	str[buf_ptr]='\0';
+//}}}	
+}
+void report_sta(){
+//{{{	
+	int longest;
+	int most_freq;
+	int curr_char;
+	staStrMsg* read_ptr = NULL;
+	const char freq_prefix[] = "Most frequent input: ";
+	const char longest_prefix[] = "Length of the longest word: ";
+	char char_buf[100];
+	
+	if(sta_str_list==NULL) return;
+	// print most frequent
+	read_ptr  = sta_str_list;
+	most_freq = read_ptr->times;
+	longest  = char_cnt(read_ptr->str);
+	my_strcpy(char_buf, read_ptr->str);
+
+	while( read_ptr != NULL ){
+		if(most_freq < read_ptr->times)	most_freq = read_ptr->times;
+		if(longest < char_cnt(read_ptr->str) ){
+			longest = char_cnt(read_ptr->str);
+			my_strcpy(char_buf, read_ptr->str);
+		}
+		// debug
+		curr_char = 0;
+		while ( (read_ptr->str)[curr_char] != '\0') {
+			send_byte( (read_ptr->str)[curr_char] );
+			curr_char++;
+		}
+		send_byte( '\n' );
+		send_byte( '\r' );
+		//
+		read_ptr = read_ptr->pcNext;
+	}
+	//
+	curr_char = 0;
+	while ( freq_prefix[curr_char] != '\0') {
+		send_byte( freq_prefix[curr_char] );
+		curr_char++;
+	}
+	curr_char = 0;
+	while ( char_buf[curr_char] != '\0') {
+		send_byte( char_buf[curr_char] );
+		curr_char++;
+	}
+	send_byte( '\n' );
+	send_byte( '\r' );
+	//
+	curr_char = 0;
+	while ( longest_prefix[curr_char] != '\0') {
+		send_byte( longest_prefix[curr_char] );
+		curr_char++;
+	}
+	atos(longest, char_buf, 100);
+	curr_char = 0;
+	while ( char_buf[curr_char] != '\0') {
+		send_byte( char_buf[curr_char] );
+		curr_char++;
+	}
+	send_byte( '\n' );
+	send_byte( '\r' );
+
+//}}}
 }
 
 portSTACK_TYPE taskDb[2];
@@ -272,12 +357,13 @@ void serial_readwrite_task(void *pvParameters){
 	serial_str_msg msg;
 	char ch;
 	int curr_char;
-	int done;
+	int done, stop=0;
 
 	/* Prepare the response message to be queued. */
 //	my_strcpy(msg.str, "Got:");
 
-	while (1) {
+//	while (1) {
+	while (!stop) {
 //		curr_char = 4;
 		curr_char = 0;
 		done = 0;
@@ -297,9 +383,14 @@ void serial_readwrite_task(void *pvParameters){
 				/* Otherwise, add the character to the
 				 * response string. */
 				if(!my_strcmp(msg.str, "END") ){	// stop
-					vTaskDelete(taskDb[0]);
-					vTaskDelete(taskDb[1]);
-					vTaskEndScheduler ();
+					report_sta();
+
+
+					vTaskSuspendAll();
+//					vTaskDelete(taskDb[0]);
+//					vTaskDelete(taskDb[1]);
+//					vTaskEndScheduler ();
+//					stop = 1;
 				}
 				save_strtok(&msg);
 			}
@@ -364,12 +455,9 @@ int main(){
 	            512 /* stack size */, NULL,
 	            tskIDLE_PRIORITY + 10, NULL);
 	taskDb[1] = (portSTACK_TYPE) serial_readwrite_task;
-
 	/* Start running the tasks. */
 	vTaskStartScheduler();
 
-	// print most frequent
-	// print longest str
 
 
 	return 0;
