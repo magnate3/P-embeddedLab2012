@@ -8,19 +8,21 @@
 #define HIGHS (ONES * (UCHAR_MAX/2+1))
 #define HASZERO(x) ((x)-ONES & ~(x) & HIGHS)
 
-size_t my_strlen(const char *s)
-{
+// length of string
+size_t my_strlen(const char *s){
+//{{{	
 	const char *a = s;
 	const size_t *w;
 	for (; (uintptr_t)s % ALIGN; s++) if (!*s) return s-a;
 	for (w = (const void *)s; !HASZERO(*w); w++);
 	for (s = (const void *)w; *s; s++);
 	return s-a;
+//}}}	
 }
 
 #define SS (sizeof(size_t))
-void *my_memset(void *dest, int c, size_t n)
-{
+// set dest to c with len n
+void *my_memset(void *dest, int c, size_t n){
 	unsigned char *s = dest;
 	c = (unsigned char)c;
 	for (; ((uintptr_t)s & ALIGN) && n; n--) *s++ = c;
@@ -32,8 +34,9 @@ void *my_memset(void *dest, int c, size_t n)
 	return dest;
 }
 
-char *my_strchrnul(const char *s, int c)
-{
+//?
+char *my_strchrnul(const char *s, int c){
+//{{{	
 	size_t *w, k;
 
 	c = (unsigned char)c;
@@ -45,13 +48,14 @@ char *my_strchrnul(const char *s, int c)
 	for (w = (void *)s; !HASZERO(*w) && !HASZERO(*w^k); w++);
 	for (s = (void *)w; *s && *(unsigned char *)s != c; s++);
 	return (char *)s;
+//}}}	
 }
 
 #define BITOP(a,b,op) \
  ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
 
-size_t my_strspn(const char *s, const char *c)
-{
+size_t my_strspn(const char *s, const char *c){
+//{{{	
 	const char *a = s;
 	size_t byteset[32/sizeof(size_t)] = { 0 };
 
@@ -64,6 +68,7 @@ size_t my_strspn(const char *s, const char *c)
 	for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++);
 	for (; *s && BITOP(byteset, *(unsigned char *)s, &); s++);
 	return s-a;
+//}}}	
 }
 
 size_t my_strcspn(const char *s, const char *c)
