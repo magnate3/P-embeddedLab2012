@@ -38,7 +38,7 @@ typedef struct staStrMsgDef{
 	struct staStrMsgDef* pcNext;	
 } staStrMsg;
 
-volatile staStrMsg* sta_str_list = NULL;
+volatile staStrMsg* sta_str_list = NULL;		// last is dummy
 
 
 char ROT13(char c){
@@ -69,57 +69,38 @@ char my_strcmp(char *restrict dest, const char *restrict src){
 void save_str_in_list(char* str_ptr){
 //{{{	
 	staStrMsg* new_sta_str = NULL;
-	staStrMsg* read_ptr = NULL;
+	staStrMsg* cur_ptr = NULL;
 
-
-	read_ptr = sta_str_list;
-	while( read_ptr != NULL && (staStrMsg*)read_ptr->pcNext != NULL){
-		if( !my_strcmp( read_ptr->str, str_ptr) ){
-			read_ptr->times++;
+	cur_ptr = sta_str_list;
+	while( cur_ptr->pcNext != NULL){	// find exist
+		if( !my_strcmp( cur_ptr->str, str_ptr) ){		
+			cur_ptr->times++;
 			break;
 		}
-		read_ptr = read_ptr->pcNext;
+		cur_ptr = cur_ptr->pcNext;
 	}
-	if( read_ptr == NULL || (staStrMsg*)read_ptr->pcNext == NULL ){
+	if( cur_ptr->pcNext == NULL){
+		my_strcpy( cur_ptr->str, str_ptr );
+		cur_ptr->times = 1;
+		
 		new_sta_str = (staStrMsg*)pvPortMalloc( sizeof(staStrMsg) );
 		new_sta_str->pcNext = NULL;
-		my_strcpy( new_sta_str->str, str_ptr );
-		new_sta_str->times = 1;
-		if(read_ptr == NULL)
-			sta_str_list = new_sta_str;
-		else 
-			read_ptr->pcNext = new_sta_str;
+		new_sta_str->times = 0;
+
+		cur_ptr->pcNext = new_sta_str;
 	}
-
-
-//	while( (pcReadFromCpy+ sta_str_queue->uxItemSize) != sta_str_queue->pcWriteTo ){
-//		if(!strcpy( (sta_str_msg*)pcReadFromCpy->str, str_ptr->str) ){
-//			(sta_str_msg*)pcReadFromCpy->times++;
-//			break;
-//		}
-//
-//		pcReadFromCpy += sta_str_queue->uxItemSize;
-//		if( pcReadFromCpy == sta_str_queue->pcTail ){
-//			pcReadFromCpy = sta_str_queue->pcHead;
-//		}
-//	}
-//	if( (pcReadFromCpy+ pcReadFromCpy->uxItemSize) != sta_str_queue->pcWriteTo){	// not found
-//		my_str_cpy( cpy_sta_str.str, str_ptr->str);
-//		cpy_sta_str.times = 1;
-//		prvCopyDataToQueue( sta_str_queue, cpy_sta_str, queueSEND_TO_BACK );
-//	}
 //}}}	
 }
 
 
-void save_strtok(serial_str_msg* str_ptr){
+void save_strtok(char* str_ptr){
 //{{{	
 	char* str_pos_ptr = NULL;
 	char* str_tok_ptr = NULL;
 
-	if(!str_ptr) return;
+	if(str_ptr==NULL || *str_ptr=='\0') return;
 
-	str_pos_ptr = str_ptr->str;
+	str_pos_ptr = str_ptr;
 	str_tok_ptr = my_strtok(str_pos_ptr, " ");
 
 	do{
@@ -131,16 +112,20 @@ void save_strtok(serial_str_msg* str_ptr){
 int char_cnt(char* c){
 	char* head = c;
 	while( *c++ != '\0');
-	return (int)(c-head);
+	return (int)(c-head-1);
 }
 void atos(int a, char* str, int buf_len){
 //{{{	
-	int buf_ptr=0;
+	int buf_ptr=0, i;
 	if(buf_len==0) return;
 	if(a == 0) str[buf_ptr++] = '0';
 	for ( ; (buf_ptr<buf_len) && a; a /= 10)
 		str[buf_ptr++] = "0123456789"[a%10];
 	str[buf_ptr]='\0';
+	// rev
+	for(i=0, --buf_ptr; i<buf_ptr; i++, buf_ptr--){
+		str[buf_ptr]^=str[i], str[i]^=str[buf_ptr], str[buf_ptr]^=str[i];
+	}
 //}}}	
 }
 void report_sta(){
@@ -148,34 +133,37 @@ void report_sta(){
 	int longest;
 	int most_freq;
 	int curr_char;
-	staStrMsg* read_ptr = NULL;
+	staStrMsg* cur_ptr = NULL;
 	const char freq_prefix[] = "Most frequent input: ";
 	const char longest_prefix[] = "Length of the longest word: ";
 	char char_buf[100];
 	
-	if(sta_str_list==NULL) return;
+	if(sta_str_list==NULL || sta_str_list->pcNext==NULL) return;
 	// print most frequent
-	read_ptr  = sta_str_list;
-	most_freq = read_ptr->times;
-	longest  = char_cnt(read_ptr->str);
-	my_strcpy(char_buf, read_ptr->str);
+	cur_ptr  = sta_str_list;
+	most_freq = cur_ptr->times;
+	longest  = char_cnt(cur_ptr->str);
+	my_strcpy(char_buf, cur_ptr->str);
 
-	while( read_ptr != NULL ){
-		if(most_freq < read_ptr->times)	most_freq = read_ptr->times;
-		if(longest < char_cnt(read_ptr->str) ){
-			longest = char_cnt(read_ptr->str);
-			my_strcpy(char_buf, read_ptr->str);
+	while( cur_ptr->pcNext != NULL ){
+		if(most_freq < cur_ptr->times){
+			most_freq = cur_ptr->times;
+			my_strcpy(char_buf, cur_ptr->str);			
+		}
+		if(longest < char_cnt(cur_ptr->str) ){
+			longest = char_cnt(cur_ptr->str);
 		}
 		// debug
+		send_byte( '>' );
 		curr_char = 0;
-		while ( (read_ptr->str)[curr_char] != '\0') {
-			send_byte( (read_ptr->str)[curr_char] );
+		while ( (cur_ptr->str)[curr_char] != '\0') {
+			send_byte( (cur_ptr->str)[curr_char] );
 			curr_char++;
 		}
 		send_byte( '\n' );
 		send_byte( '\r' );
 		//
-		read_ptr = read_ptr->pcNext;
+		cur_ptr = cur_ptr->pcNext;
 	}
 	//
 	curr_char = 0;
@@ -358,6 +346,7 @@ void serial_readwrite_task(void *pvParameters){
 	char ch;
 	int curr_char;
 	int done, stop=0;
+	char tmp[100];
 
 	/* Prepare the response message to be queued. */
 //	my_strcpy(msg.str, "Got:");
@@ -392,7 +381,8 @@ void serial_readwrite_task(void *pvParameters){
 //					vTaskEndScheduler ();
 //					stop = 1;
 				}
-				save_strtok(&msg);
+				my_strcpy(tmp, msg.str);
+				save_strtok(tmp);
 			}
 			else {
 				msg.str[curr_char++] = ch;
@@ -425,7 +415,11 @@ int main(){
 	serial_str_queue = xQueueCreate(10, sizeof(serial_str_msg));
 	vSemaphoreCreateBinary(serial_tx_wait_sem);
 	serial_rx_queue = xQueueCreate(1, sizeof(serial_ch_msg));
-//	sta_str_queue = (sta_str_msg*)pvPortMalloc(1000 * sizeof(sta_str_msg));
+
+	// easy use
+	sta_str_list = (staStrMsg*)pvPortMalloc( sizeof(staStrMsg) );
+	sta_str_list->pcNext = NULL;
+	sta_str_list->times = 0;
 
 	/* Create a task to flash the LED. */
 //	xTaskCreate(led_flash_task,
