@@ -12,11 +12,11 @@ void *memset(void *dest, int c, size_t n)
 {
 	unsigned char *s = dest;
 	c = (unsigned char)c;
-	for (; ((uintptr_t)s & ALIGN) && n; n--) *s++ = c;
+	for (; ((uintptr_t)s & ALIGN) && n; n--) *s++ = c;			// to aligned address
 	if (n) {
-		size_t *w, k = ONES * c;
-		for (w = (void *)s; n>=SS; n-=SS, w++) *w = k;
-		for (s = (void *)w; n; n--, s++) *s = c;
+		size_t *w, k = ONES * c;								// k = cccc....
+		for (w = (void *)s; n>=SS; n-=SS, w++) *w = k;			// fill larget size SS each time
+		for (s = (void *)w; n; n--, s++) *s = c;				// remain
 	}
 	return dest;
 }
@@ -29,3 +29,22 @@ char *strcpy(char *dest, const char *src)
 	return dest;
 }
 
+
+void memcpy(void* dst, void* src, size_t n){
+//{{{	
+	unsigned char *d = dst;
+	unsigned char *s = src;
+
+	if( ((uintptr_t)d & ALIGN) == ((uintptr_t)s & ALIGN) ){
+		for (; ((uintptr_t)d & ALIGN) && n; n--) *d++ = *s++;			// to aligned address
+	}
+	if (n) {
+		if( !( ((uintptr_t)d & ALIGN) | ((uintptr_t)s & ALIGN) ) ){		// both aligned
+			size_t *wd = (void*) d;
+			size_t *ws = (void*) s;
+			for(; n>=SS; n-=SS) *wd++ = *ws++;							// max copy
+		}
+		for(; n; n--) *d++ = *s++;										// remain
+	}
+//}}}	
+}
