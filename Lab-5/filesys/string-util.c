@@ -30,7 +30,7 @@ char *strcpy(char *dest, const char *src)
 }
 
 
-void memcpy(void* dst, void* src, size_t n){
+void* memcpy(void* dst, void* src, size_t n){
 //{{{	
 	unsigned char *d = dst;
 	unsigned char *s = src;
@@ -46,5 +46,42 @@ void memcpy(void* dst, void* src, size_t n){
 		}
 		for(; n; n--) *d++ = *s++;										// remain
 	}
+	return dst;
 //}}}	
 }
+
+/*
+Copies at most count characters of the byte string pointed to by src (including the terminating null character) to character array pointed to by dest.
+
+If count is reached before the entire string src was copied, the resulting character array is not null-terminated.
+
+If, after copying the terminating null character from src, count is not reached, additional null characters are written to dest until the total of count characters have been written. 
+*/
+char *strncpy(char *dest, const char *src, size_t n)
+{
+	char *d = dest;
+	while( n && (*src!='\0') ){
+		*d++ = *src++;
+		n--;
+	}
+	while(n){
+		*d++ = '\0';
+		n--;
+	}
+	return dest;
+}
+
+/*
+Finds the first occurrence of the character ch in the byte string pointed to by str.
+
+The terminating null character is considered to be a part of the string.
+*/
+const char* strchr(const char* str, int ch ){
+	const char* s = str;
+	while( *s != (char)ch ){
+		if(*s == '\0') return NULL;
+		s++;
+	}
+	return s;
+}
+	
