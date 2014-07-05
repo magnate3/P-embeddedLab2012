@@ -19,7 +19,6 @@ volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
 volatile xQueueHandle serial_rx_queue = NULL;
 
 extern char* _sromfs_at_fl;
-extern void fio_init();
 
 /* Queue structure used for passing messages. */
 typedef struct {
@@ -154,12 +153,12 @@ void queue_str_task(const char *str, int delay)
 
 void queue_str_task1(void *pvParameters)
 {
-	queue_str_task("Hello 1\n", 200);
+	queue_str_task("Hello 1\n\r", 200);
 }
 
 void queue_str_task2(void *pvParameters)
 {
-	queue_str_task("Hello 2\n", 50);
+	queue_str_task("Hello 2\n\r", 50);
 }
 
 void serial_readwrite_task(void *pvParameters)
@@ -208,20 +207,25 @@ void serial_readwrite_task(void *pvParameters)
 void read_file_task(void *pvParameters)
 {
 //{{{
-	char buf[100];
+	char buf[20];
 	char* buf_ptr=buf;	// debug
 	size_t read_count= 0;
-	int romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
+	int romfs_handle;
 	int devfs_handle = fs_open("/dev/stdout", 1, O_WRONLY);
-
+	serial_str_msg msg;
 
 	while(1){
-		do {
-			read_count = fio_read(romfs_handle, buf_ptr, 100);
-			fio_write(devfs_handle, buf, read_count);
-		}while(read_count);
+//		strcpy(msg.str, "read_file_task\n\r");
+//		while (!xQueueSendToBack(serial_str_queue, &msg,
+//		   portMAX_DELAY));
 	
-		vTaskDelay(100);
+		romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
+		read_count = fio_read(romfs_handle, buf_ptr, 20);
+		fio_write(devfs_handle, buf_ptr, read_count);
+		buf[0] = '\n';
+		buf[1] = '\r';
+		fio_write(devfs_handle, buf_ptr, 2);
+		vTaskDelay(150);
 	}
 	fio_close(romfs_handle);
 	fio_close(devfs_handle);
@@ -237,7 +241,7 @@ int main()
 //	enable_button_interrupts();
 
 	init_rs232();
-//	enable_rs232_interrupts();
+	enable_rs232_interrupts();
 	enable_rs232();
 
 	fs_init();
@@ -257,7 +261,7 @@ int main()
 	            (signed portCHAR *) "LED Flash",
 	            512 /* stack size */, NULL,
 	            tskIDLE_PRIORITY + 5, NULL);
-//
+
 //	/* Create tasks to queue a string to be written to the RS232 port. */
 //	xTaskCreate(queue_str_task1,
 //	            (signed portCHAR *) "Serial Write 1",
@@ -282,8 +286,8 @@ int main()
 
 	xTaskCreate(read_file_task,
 	            (signed portCHAR *) "Read File",
-	            1024 /* stack size */, NULL,
-	            tskIDLE_PRIORITY + 2, NULL);
+	            512 /* stack size */, NULL,
+	            tskIDLE_PRIORITY + 5, NULL);
 
 	/* Start running the tasks. */
 	vTaskStartScheduler();
