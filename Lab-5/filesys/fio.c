@@ -50,6 +50,7 @@ static int fio_is_open_int(int fd) {
     return r;
 }
 
+// find an empty one
 static int fio_findfd() {
     int i;
     
@@ -72,7 +73,7 @@ int fio_is_open(int fd) {
 int fio_open(fdread_t fdread, fdwrite_t fdwrite, fdseek_t fdseek, fdclose_t fdclose, void * opaque) {
     int fd;
 //    DBGOUT("fio_open(%p, %p, %p, %p, %p)\r\n", fdread, fdwrite, fdseek, fdclose, opaque);
-    xSemaphoreTake(fio_sem, portMAX_DELAY);
+//    xSemaphoreTake(fio_sem, portMAX_DELAY);							// <tag>
     fd = fio_findfd();
     
     if (fd >= 0) {
@@ -82,7 +83,7 @@ int fio_open(fdread_t fdread, fdwrite_t fdwrite, fdseek_t fdseek, fdclose_t fdcl
         fio_fds[fd].fdclose = fdclose;
         fio_fds[fd].opaque = opaque;
     }
-    xSemaphoreGive(fio_sem);
+//    xSemaphoreGive(fio_sem);
     
     return fd;
 }

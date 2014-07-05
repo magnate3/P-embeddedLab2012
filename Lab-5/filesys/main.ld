@@ -18,7 +18,7 @@ SECTIONS
 	} >FLASH
 
 	/* Initialized data will initially be loaded in FLASH at the end of the .text section. */
-    .data : AT (_sidata) 
+    .data : AT (_sidata) /* mapping to flash */
     {
 		_sdata = .;
 		*(.data)		/* Initialized data */
@@ -35,5 +35,6 @@ SECTIONS
 		_ebss = .;
 	} >RAM
     
+	_sromfs_at_fl = _sromfs - ORIGIN(RAM) + _sidata;
     _estack = ORIGIN(RAM) + LENGTH(RAM);
  }  

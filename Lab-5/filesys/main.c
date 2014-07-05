@@ -17,7 +17,9 @@ static void setup_hardware();
 volatile xQueueHandle serial_str_queue = NULL;
 volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
 volatile xQueueHandle serial_rx_queue = NULL;
-extern uint8_t* _sromfs;
+
+extern char* _sromfs_at_fl;
+extern void fio_init();
 
 /* Queue structure used for passing messages. */
 typedef struct {
@@ -205,21 +207,27 @@ void read_file_task(void *pvParameters)
 {
 //{{{
 	char buf[100];
-	int romfs_ptr = fs_open("/rom/test.txt", 0, O_RDONLY);
-	int devfs_ptr = fs_open("/dev/", 1, O_WRONLY);
-	fio_read(romfs_ptr, buf, 100);
+	char* buf_ptr=buf;	// debug
+	size_t read_count= 0;
+	int romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
+	int devfs_handle = fs_open("/dev/", 1, O_WRONLY);
+	
+	do {
+		read_count = fio_read(romfs_handle, buf_ptr, 100);
+//		fio_write(1, buf_ptr, read_count);
+		fio_write(devfs_handle, buf, read_count);
+	}while(read_count);
 
-	fio_write(devfs_ptr, buf, 100);
-
+	vTaskDelay(100);
 
 //}}}	
 }
 
 int main()
 {
-	uint8_t* sromfs  = &_sromfs;
-//	init_led();
-//
+	uint8_t* sromfs  = &_sromfs_at_fl;
+	init_led();
+
 //	init_button();
 //	enable_button_interrupts();
 
@@ -239,11 +247,11 @@ int main()
 	vSemaphoreCreateBinary(serial_tx_wait_sem);
 	serial_rx_queue = xQueueCreate(1, sizeof(serial_ch_msg));
 
-//	/* Create a task to flash the LED. */
-//	xTaskCreate(led_flash_task,
-//	            (signed portCHAR *) "LED Flash",
-//	            512 /* stack size */, NULL,
-//	            tskIDLE_PRIORITY + 5, NULL);
+	/* Create a task to flash the LED. */
+	xTaskCreate(led_flash_task,
+	            (signed portCHAR *) "LED Flash",
+	            512 /* stack size */, NULL,
+	            tskIDLE_PRIORITY + 5, NULL);
 //
 //	/* Create tasks to queue a string to be written to the RS232 port. */
 //	xTaskCreate(queue_str_task1,

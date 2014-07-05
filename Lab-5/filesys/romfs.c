@@ -93,7 +93,7 @@ static int romfs_open(void * opaque, const char * path, int flags, int mode) {
 
     if (file) {
         r = fio_open(romfs_read, NULL, romfs_seek, NULL, NULL);
-        if (r > 0) {
+        if (r >= 0) {																// <tag>
             romfs_fds[r].file = file;
             romfs_fds[r].cursor = 0;
             fio_set_opaque(r, romfs_fds + r);
