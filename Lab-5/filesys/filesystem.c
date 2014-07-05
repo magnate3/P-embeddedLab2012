@@ -20,6 +20,7 @@ __attribute__((constructor)) void fs_init() {
     memset(fss, 0, sizeof(fss));
 }
 
+// opaque 對 romfs 來說就是檔案系統區段的開始
 int register_fs(const char * mountpoint, fs_open_t callback, void * opaque) {
     int i;
     DBGOUT("register_fs(\"%s\", %p, %p)\r\n", mountpoint, callback, opaque);
@@ -40,7 +41,7 @@ int fs_open(const char * path, int flags, int mode) {
     const char * slash;
     uint32_t hash;
     int i;
-//    DBGOUT("fs_open(\"%s\", %i, %i)\r\n", path, flags, mode);
+    DBGOUT("fs_open(\"%s\", %i, %i)\r\n", path, flags, mode);
     
     while (path[0] == '/')
         path++;
@@ -53,7 +54,7 @@ int fs_open(const char * path, int flags, int mode) {
     hash = hash_djb2((const uint8_t *) path, slash - path);
     path = slash + 1;
 
-    for (i = 0; i < MAX_FS; i++) {
+    for (i = 0; i < MAX_FS; i++) {			// search matched device type then call
         if (fss[i].hash == hash)
             return fss[i].cb(fss[i].opaque, path, flags, mode);
     }

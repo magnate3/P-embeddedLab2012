@@ -7,12 +7,17 @@
 #include "queue.h"
 #include "semphr.h"
 #include <string.h>
+#include "filesystem.h"
+#include "fio.h"
+#include "romfs.h"
+#include "osdebug.h"
 
 static void setup_hardware();
 
 volatile xQueueHandle serial_str_queue = NULL;
 volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
 volatile xQueueHandle serial_rx_queue = NULL;
+extern uint8_t* _sromfs;
 
 /* Queue structure used for passing messages. */
 typedef struct {
@@ -155,6 +160,7 @@ void queue_str_task2(void *pvParameters)
 
 void serial_readwrite_task(void *pvParameters)
 {
+//{{{	
 	serial_str_msg msg;
 	char ch;
 	int curr_char;
@@ -192,18 +198,40 @@ void serial_readwrite_task(void *pvParameters)
 		while (!xQueueSendToBack(serial_str_queue, &msg,
 		                         portMAX_DELAY));
 	}
+//}}}	
+}
+
+void read_file_task(void *pvParameters)
+{
+//{{{
+	char buf[100];
+	int romfs_ptr = fs_open("/rom/test.txt", 0, O_RDONLY);
+	int devfs_ptr = fs_open("/dev/", 1, O_WRONLY);
+	fio_read(romfs_ptr, buf, 100);
+
+	fio_write(devfs_ptr, buf, 100);
+
+
+//}}}	
 }
 
 int main()
 {
-	init_led();
-
-	init_button();
-	enable_button_interrupts();
+	uint8_t* sromfs  = &_sromfs;
+//	init_led();
+//
+//	init_button();
+//	enable_button_interrupts();
 
 	init_rs232();
 	enable_rs232_interrupts();
 	enable_rs232();
+
+	fs_init();
+
+	register_romfs("rom", sromfs);
+	register_devfs();
+
 
 	/* Create the queue used by the serial task.  Messages for write to
 	 * the RS232. */
@@ -211,31 +239,36 @@ int main()
 	vSemaphoreCreateBinary(serial_tx_wait_sem);
 	serial_rx_queue = xQueueCreate(1, sizeof(serial_ch_msg));
 
-	/* Create a task to flash the LED. */
-	xTaskCreate(led_flash_task,
-	            (signed portCHAR *) "LED Flash",
-	            512 /* stack size */, NULL,
-	            tskIDLE_PRIORITY + 5, NULL);
+//	/* Create a task to flash the LED. */
+//	xTaskCreate(led_flash_task,
+//	            (signed portCHAR *) "LED Flash",
+//	            512 /* stack size */, NULL,
+//	            tskIDLE_PRIORITY + 5, NULL);
+//
+//	/* Create tasks to queue a string to be written to the RS232 port. */
+//	xTaskCreate(queue_str_task1,
+//	            (signed portCHAR *) "Serial Write 1",
+//	            512 /* stack size */, NULL,
+//	            tskIDLE_PRIORITY + 10, NULL );
+//	xTaskCreate(queue_str_task2,
+//	            (signed portCHAR *) "Serial Write 2",
+//	            512 /* stack size */,
+//	            NULL, tskIDLE_PRIORITY + 10, NULL);
+//
+//	/* Create a task to write messages from the queue to the RS232 port. */
+//	xTaskCreate(rs232_xmit_msg_task,
+//	            (signed portCHAR *) "Serial Xmit Str",
+//	            512 /* stack size */, NULL, tskIDLE_PRIORITY + 2, NULL);
+//
+//	/* Create a task to receive characters from the RS232 port and echo
+//	 * them back to the RS232 port. */
+//	xTaskCreate(serial_readwrite_task,
+//	            (signed portCHAR *) "Serial Read/Write",
+//	            512 /* stack size */, NULL,
+//	            tskIDLE_PRIORITY + 10, NULL);
 
-	/* Create tasks to queue a string to be written to the RS232 port. */
-	xTaskCreate(queue_str_task1,
-	            (signed portCHAR *) "Serial Write 1",
-	            512 /* stack size */, NULL,
-	            tskIDLE_PRIORITY + 10, NULL );
-	xTaskCreate(queue_str_task2,
-	            (signed portCHAR *) "Serial Write 2",
-	            512 /* stack size */,
-	            NULL, tskIDLE_PRIORITY + 10, NULL);
-
-	/* Create a task to write messages from the queue to the RS232 port. */
-	xTaskCreate(rs232_xmit_msg_task,
-	            (signed portCHAR *) "Serial Xmit Str",
-	            512 /* stack size */, NULL, tskIDLE_PRIORITY + 2, NULL);
-
-	/* Create a task to receive characters from the RS232 port and echo
-	 * them back to the RS232 port. */
-	xTaskCreate(serial_readwrite_task,
-	            (signed portCHAR *) "Serial Read/Write",
+	xTaskCreate(read_file_task,
+	            (signed portCHAR *) "Read File",
 	            512 /* stack size */, NULL,
 	            tskIDLE_PRIORITY + 10, NULL);
 

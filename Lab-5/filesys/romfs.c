@@ -65,6 +65,9 @@ static off_t romfs_seek(void * opaque, off_t offset, int whence) {
     return offset;
 }
 
+
+// so file has to put in a correct place
+//romfs_get_file_by_hash() 從檔案系統起始點 romfs 出發，遍歷整個檔案系統，找到 hash 值符合的檔案後把內容區的位置傳回。
 const uint8_t * romfs_get_file_by_hash(const uint8_t * romfs, uint32_t h, uint32_t * len) {
     const uint8_t * meta;
 
@@ -100,6 +103,6 @@ static int romfs_open(void * opaque, const char * path, int flags, int mode) {
 }
 
 void register_romfs(const char * mountpoint, const uint8_t * romfs) {
-//    DBGOUT("Registering romfs `%s' @ %p\r\n", mountpoint, romfs);
+    DBGOUT("Registering romfs `%s' @ %p\r\n", mountpoint, romfs);
     register_fs(mountpoint, romfs_open, (void *) romfs);
 }

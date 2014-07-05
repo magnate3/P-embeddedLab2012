@@ -74,6 +74,7 @@ main.bin: test-romfs.o main.c
 		osdebug.o \
 		string-util.o \
 		\
+		test-romfs.o \
 		main.o
 	$(CROSS_COMPILE)objcopy -Obinary main.elf main.bin
 	$(CROSS_COMPILE)objdump -S main.elf > main.list
@@ -86,6 +87,7 @@ CPU=arm
 TARGET_FORMAT = elf32-littlearm
 TARGET_OBJCOPY_BIN = $(CROSS_COMPILE)objcopy -I binary -O $(TARGET_FORMAT) --binary-architecture $(CPU)
 
+# 把 test-romfs 目錄變成 test-romfs.bin 的檔案系統
 test-romfs.o: mkromfs
 	./mkromfs -d test-romfs test-romfs.bin
 	$(TARGET_OBJCOPY_BIN) --prefix-sections '.romfs' test-romfs.bin test-romfs.o
@@ -98,6 +100,14 @@ qemudbg: main.bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-gdb tcp::3333 -S \
 		-kernel main.bin
+qemuauto: main.bin $(QEMU_STM32) test-romfs.o
+	$(QEMU_STM32) -M stm32-p103 \
+		-serial stdio\
+		-gdb tcp::3333 -S \
+		-kernel main.bin & echo "$$!" > "qemu.pid"
+	sleep 5
+	kill -9 `cat qemu.pid`
+	rm -f qemu.pid
 
 emu: main.bin
 	bash emulate.sh main.bin

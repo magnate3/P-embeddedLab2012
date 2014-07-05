@@ -23,6 +23,10 @@ SECTIONS
 		_sdata = .;
 		*(.data)		/* Initialized data */
 		_edata = .;
+		. = 0x100;
+		_sromfs = .;
+		*(.romfs.data)
+		_eromfs = .;
 	} >RAM
 
 	.bss : {
