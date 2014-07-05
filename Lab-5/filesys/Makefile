@@ -103,7 +103,6 @@ qemudbg: main.bin $(QEMU_STM32)
 qemuauto: main.bin $(QEMU_STM32) test-romfs.o
 	$(QEMU_STM32) -M stm32-p103 \
 		-serial stdio\
-		-gdb tcp::3333 -S \
 		-kernel main.bin & echo "$$!" > "qemu.pid"
 	sleep 5
 	kill -9 `cat qemu.pid`

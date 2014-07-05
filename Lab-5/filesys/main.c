@@ -210,11 +210,10 @@ void read_file_task(void *pvParameters)
 	char* buf_ptr=buf;	// debug
 	size_t read_count= 0;
 	int romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
-	int devfs_handle = fs_open("/dev/", 1, O_WRONLY);
+	int devfs_handle = fs_open("/dev/stdout", 1, O_WRONLY);
 	
 	do {
 		read_count = fio_read(romfs_handle, buf_ptr, 100);
-//		fio_write(1, buf_ptr, read_count);
 		fio_write(devfs_handle, buf, read_count);
 	}while(read_count);
 
