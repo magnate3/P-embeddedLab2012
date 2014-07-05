@@ -31,6 +31,8 @@ __attribute__((constructor)) static void fio_init() {
     fio_fds[1].fdwrite = stdout_write;
     fio_fds[2].fdwrite = stdout_write;
     fio_sem = xSemaphoreCreateMutex();
+    xSemaphoreTake(fio_sem, portMAX_DELAY);	
+	xSemaphoreGive(fio_sem);
 }
 
 struct fddef_t * fio_getfd(int fd) {

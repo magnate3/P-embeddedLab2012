@@ -7,10 +7,10 @@
 #include "queue.h"
 #include "semphr.h"
 #include <string.h>
+
 #include "filesystem.h"
 #include "fio.h"
 #include "romfs.h"
-#include "osdebug.h"
 
 static void setup_hardware();
 
@@ -30,6 +30,8 @@ typedef struct {
 typedef struct {
 	char ch;
 } serial_ch_msg;
+
+
 
 /* IRQ handler to handle USART2 interruptss (both transmit and receive
  * interrupts). */
@@ -211,14 +213,18 @@ void read_file_task(void *pvParameters)
 	size_t read_count= 0;
 	int romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
 	int devfs_handle = fs_open("/dev/stdout", 1, O_WRONLY);
+
+
+	while(1){
+		do {
+			read_count = fio_read(romfs_handle, buf_ptr, 100);
+			fio_write(devfs_handle, buf, read_count);
+		}while(read_count);
 	
-	do {
-		read_count = fio_read(romfs_handle, buf_ptr, 100);
-		fio_write(devfs_handle, buf, read_count);
-	}while(read_count);
-
-	vTaskDelay(100);
-
+		vTaskDelay(100);
+	}
+	fio_close(romfs_handle);
+	fio_close(devfs_handle);
 //}}}	
 }
 
@@ -231,7 +237,7 @@ int main()
 //	enable_button_interrupts();
 
 	init_rs232();
-	enable_rs232_interrupts();
+//	enable_rs232_interrupts();
 	enable_rs232();
 
 	fs_init();
@@ -276,8 +282,8 @@ int main()
 
 	xTaskCreate(read_file_task,
 	            (signed portCHAR *) "Read File",
-	            512 /* stack size */, NULL,
-	            tskIDLE_PRIORITY + 10, NULL);
+	            1024 /* stack size */, NULL,
+	            tskIDLE_PRIORITY + 2, NULL);
 
 	/* Start running the tasks. */
 	vTaskStartScheduler();

@@ -23,7 +23,7 @@ __attribute__((constructor)) void fs_init() {
 // opaque 對 romfs 來說就是檔案系統區段的開始
 int register_fs(const char * mountpoint, fs_open_t callback, void * opaque) {
     int i;
-    DBGOUT("register_fs(\"%s\", %p, %p)\r\n", mountpoint, callback, opaque);
+//    DBGOUT("register_fs(\"%s\", %p, %p)\r\n", mountpoint, callback, opaque);
     
     for (i = 0; i < MAX_FS; i++) {
         if (!fss[i].cb) {
@@ -41,7 +41,7 @@ int fs_open(const char * path, int flags, int mode) {
     const char * slash;
     uint32_t hash;
     int i;
-    DBGOUT("fs_open(\"%s\", %i, %i)\r\n", path, flags, mode);
+//    DBGOUT("fs_open(\"%s\", %i, %i)\r\n", path, flags, mode);
     
     while (path[0] == '/')
         path++;
