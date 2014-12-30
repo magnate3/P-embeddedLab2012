@@ -1,15 +1,35 @@
+/**
+  ******************************************************************************
+  * @file    main.c 
+  * @author  MCD Application Team
+  * @version V1.0.0
+  * @date    19-September-2011
+  * @brief   Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
+  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
+  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
+  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  *
+  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  ******************************************************************************
+  */ 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usbd_cdc_core.h"
+#include "usbd_hid_core.h"
 #include "usbd_usr.h"
 #include "usbd_desc.h"
-#include "usbd_cdc_vcp.h"
 
+//Library config for this project!!!!!!!!!!!
 #include "stm32f4xx_conf.h"
 
 /** @addtogroup STM32F4-Discovery_Demo
- * @{
- */
+  * @{
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -20,115 +40,148 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
+  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
+    #pragma data_alignment = 4   
+  #endif
+#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
+  
+uint16_t PrescalerValue = 0;
 
 __IO uint32_t TimingDelay;
-
+__IO uint8_t DemoEnterCondition = 0x00;
+__IO uint8_t UserButtonPressed = 0x00;
+uint8_t Buffer[6];
 
 /* Private function prototypes -----------------------------------------------*/
-
+void Success_Handler(void);
 void USB_Test(void);
 /* Private functions ---------------------------------------------------------*/
 
 /**
- * @brief  Main program.
- * @param  None
- * @retval None
- */
+  * @brief  Main program.
+  * @param  None
+  * @retval None
+  */
 int main(void)
 {
+  RCC_ClocksTypeDef RCC_Clocks;
+  
+  /* Initialize LEDs and User_Button on STM32F4-Discovery --------------------*/
+  STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_EXTI); 
+  
+  STM_EVAL_LEDInit(LED4);
+  STM_EVAL_LEDInit(LED3);
+  STM_EVAL_LEDInit(LED5);
+  STM_EVAL_LEDInit(LED6);
+  
+  /* SysTick end of count event each 10ms */
+  RCC_GetClocksFreq(&RCC_Clocks);
+  SysTick_Config(RCC_Clocks.HCLK_Frequency / 100);
 
-	/* Initialize LEDs and User_Button on STM32F4-Discovery --------------------*/
 
-	__IO uint32_t i = 0;  
-	uint8_t buf[255];
-	uint8_t len;
+     /* Turn OFF all LEDs */
+    STM_EVAL_LEDOff(LED4);
+    STM_EVAL_LEDOff(LED3);
+    STM_EVAL_LEDOff(LED5);
+    STM_EVAL_LEDOff(LED6);
 
-	USBD_Init(&USB_OTG_dev,     
-			USB_OTG_FS_CORE_ID, 
-			&USR_desc, 
-			&USBD_CDC_cb, 
-			&USR_cb);
-
-	VCP_send_str("TEST START\n");
-
-	VCP_send_str("TEST USB\n");
+    //
+    STM_EVAL_LEDOn(LED3);
     USB_Test();
-	VCP_send_str("USB PASS\n");
 
+    STM_EVAL_LEDOff(LED3);
+    Success_Handler();
 
-	VCP_send_str("TEST END\n");
-	return 0;    
 }
 
+
+
 /**
- * @brief  Inserts a delay time.
- * @param  nTime: specifies the delay time length, in 10 ms.
- * @retval None
- */
+  * @brief  Inserts a delay time.
+  * @param  nTime: specifies the delay time length, in 10 ms.
+  * @retval None
+  */
 void Delay(__IO uint32_t nTime)
 {
-	TimingDelay = nTime;
+  TimingDelay = nTime;
 
-	while(TimingDelay != 0);
+  while(TimingDelay != 0);
 }
 
 /**
- * @brief  Decrements the TimingDelay variable.
- * @param  None
- * @retval None
- */
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
 void TimingDelay_Decrement(void)
 {
-	if (TimingDelay != 0x00) { 
-		TimingDelay--;
-	}
+  if (TimingDelay != 0x00)
+  { 
+    TimingDelay--;
+  }
 }
 
 /**
- * @brief  This function handles the test program fail.
- * @param  None
- * @retval None
- */
+  * @brief  This function handles the test program fail.
+  * @param  None
+  * @retval None
+  */
 void Fail_Handler(void)
 {
-	/* Erase last sector */ 
-	FLASH_EraseSector(FLASH_Sector_11, VoltageRange_3);
-	/* Write FAIL code at last word in the flash memory */
-	FLASH_ProgramWord(TESTRESULT_ADDRESS, ALLTEST_FAIL);
-
-	while(1)
-	{
-		/* Toggle Red LED */
-		STM_EVAL_LEDToggle(LED5);
-		Delay(5);
-	}
+  /* Erase last sector */ 
+  FLASH_EraseSector(FLASH_Sector_11, VoltageRange_3);
+  /* Write FAIL code at last word in the flash memory */
+  FLASH_ProgramWord(TESTRESULT_ADDRESS, ALLTEST_FAIL);
+  
+  while(1)
+  {
+    /* Toggle Red LED */
+    STM_EVAL_LEDToggle(LED5);
+    Delay(5);
+  }
+}
+void Success_Handler(void)
+{
+  /* Erase last sector */ 
+  FLASH_EraseSector(FLASH_Sector_11, VoltageRange_3);
+  /* Write FAIL code at last word in the flash memory */
+  FLASH_ProgramWord(TESTRESULT_ADDRESS, ALLTEST_FAIL);
+  
+  while(1)
+  {
+    /* Toggle Red LED */
+    STM_EVAL_LEDToggle(LED6);
+    Delay(5);
+  }
 }
 
 
 #ifdef  USE_FULL_ASSERT
 
 /**
- * @brief  Reports the name of the source file and the source line number
- *   where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *   where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t* file, uint32_t line)
 { 
-	/* User can add his own implementation to report the file name and line number,
-ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
-	/* Infinite loop */
-	while (1) {
-	}
+  /* Infinite loop */
+  while (1)
+  {
+  }
 }
 #endif
 
 /**
- * @}
- */
+  * @}
+  */
 
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
@@ -162,7 +215,7 @@ void USB_Test(void)
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOD, &GPIO_InitStructure);
   
-  /* Turn LED8 ON using PD5 */                              // USB LED
+  /* Turn LED8 ON using PD5 */
   GPIO_ResetBits(GPIOD, GPIO_Pin_5);
   
   /* GPIOC Configuration: Pin 0 in output push-pull */
@@ -180,10 +233,8 @@ void USB_Test(void)
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-// power on STMPS2141 power switch. This will place 5V on the PA9 serial line whenever PC0 is set low.
   
-  /* Turn LED7 ON using PC0 (5v) */                     // usb VBUS        , see user manual         
+  /* Turn LED7 ON using PC0 (5v) */
   GPIO_ResetBits(GPIOC, GPIO_Pin_0); 
   
   /* Waiting delay 10ms */
@@ -192,9 +243,9 @@ void USB_Test(void)
   if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) == Bit_RESET)
   {
     Fail_Handler();
-  }  
+  }
   
-  /* GPIOA Configuration: Pins 10 in output push-pull */                    // OTG_FS_ID
+  /* GPIOA Configuration: Pins 10 in output push-pull */
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -210,7 +261,7 @@ void USB_Test(void)
   {
     Fail_Handler();
   }
- 
+  
   /* Turn LED7 OFF using PC0 */
   GPIO_SetBits(GPIOC, GPIO_Pin_0);  
   
@@ -223,7 +274,7 @@ void USB_Test(void)
   GPIO_Init(GPIOA, &GPIO_InitStructure);
   
   /* GPIOA Configuration: Pin 9 in output push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;                                 // VBUS
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
@@ -307,9 +358,7 @@ void USB_Test(void)
   /* Turn Green LED ON: signaling Audio USB Test part1 PASS */
   STM_EVAL_LEDOn(LED4);
   
-  /* Waiting User Button is pressed */
-  
-  /* Waiting User Button is Released */
+    Delay(100);
   
   /* Turn Green LED OFF: signaling the end of Audio USB Test part1 and switching to 
   the part2 */
@@ -321,114 +370,6 @@ void USB_Test(void)
   /* Turn LED8 OFF using PD5 */
   GPIO_SetBits(GPIOD, GPIO_Pin_5);
   
-  /*--------------- Part2: with Audio USB cables connected  ------------------*/ 
-  
-  /*********************************** USB Test *******************************/
-  /* Check the ID level with cable connected */
-  if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10) != Bit_RESET)
-  {
-    Fail_Handler();
-  }
-  
-  /* GPIOA Configuration: Pins 11, 12 in input pull-down */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
-  /* GPIOA Configuration: Pin 9 in output push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_SetBits(GPIOA, GPIO_Pin_9);
-  
-  /* Waiting delay 10ms */
-  Delay(1);
- 
-  /* Check PA11 and PA12 level with cable connected */
-  if ((GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11) == Bit_RESET) || \
-      (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_12) == Bit_RESET))
-  {
-    Fail_Handler();
-  }  
-  
-  /* GPIOA Configuration: Pins 9, 12 in input pull-down */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_12;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
-  /* GPIOA Configuration: Pin 11 in output push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_SetBits(GPIOA, GPIO_Pin_11);
-  
-  /* Waiting delay 10ms */
-  Delay(1);
-  
-  /* Check PA9 and PA12 level with cable connected */
-  if ((GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) == Bit_RESET)|| \
-      (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_12) == Bit_RESET))
-  {
-    Fail_Handler();
-  }
-  
-  /* GPIOA Configuration: Pins 9, 11 in input pull-down */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_11;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
-  /* GPIOA Configuration: Pin 12 in output push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_SetBits(GPIOA, GPIO_Pin_12);
-  
-  /* Waiting delay 10ms */
-  Delay(1);
-  
-  /* Check PA9 and PA12 level with cable connected */
-  if ((GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) == Bit_RESET)|| \
-      (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11) == Bit_RESET))
-  {
-    Fail_Handler();
-  }
-
-  /* GPIOA Configuration: Pins 11, 12 in input pull-down */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
-  /* GPIOA Configuration: Pin 9 in output push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
-  /* Turn LED7 OFF using PA9 */
-  GPIO_ResetBits(GPIOA, GPIO_Pin_9);
 //}}}  
 }
 
