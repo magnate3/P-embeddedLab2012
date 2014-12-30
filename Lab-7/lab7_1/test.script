@@ -1,0 +1,18 @@
+file main.elf
+target remote :3333
+monitor arm semihosting enable
+monitor reset halt
+
+b factorial
+c
+display n
+
+while( n!=0 )
+	c
+end
+c
+while( n!=0 )
+	c
+end
+disconnect
+quit
