@@ -171,8 +171,13 @@ void create_uart_rx(const void *stackptr){
 	if (setjmp(uart_rx_buf) == 0) {
 		RESTORE_STACK(savedstack);
 		rx_char = 0;
+        	    USART_SendData(USART2, 'r');
+        	    USART_SendData(USART2, '0');
 	}
 	else {
+        	    USART_SendData(USART2, 'r');
+        	    USART_SendData(USART2, '1');
+
 		/* We got here through longjmp */
 		uart_rx();
 	}
@@ -214,8 +219,12 @@ void create_uart_tx(const void *stackptr){
 
 	if (setjmp(uart_tx_buf) == 0) {
 		RESTORE_STACK(savedstack);
+        	    USART_SendData(USART2, 't');
+        	    USART_SendData(USART2, '0');
 	}
 	else {
+        	    USART_SendData(USART2, 't');
+        	    USART_SendData(USART2, '1');
 		uart_tx();
 	}
 //}}}	
@@ -268,11 +277,11 @@ int main(void){
 //	create_uart_tx((char *) malloc(STACK_SIZE) + STACK_SIZE);
 //	create_button_rx((char *) malloc(STACK_SIZE) + STACK_SIZE);
 
-	create_uart_rx( uart_rx_stack + STACK_SIZE);
-	create_uart_tx( uart_tx_stack + STACK_SIZE);
+	create_uart_rx( uart_rx_stack + STACK_SIZE);        // r0
+	create_uart_tx( uart_tx_stack + STACK_SIZE);        // t0
 //
 //
-	longjmp(uart_rx_buf, 1);
+	longjmp(uart_rx_buf, 1);                            // to last setjmp with uart_rx_buf and return 1 -> r1
 
 	return 0;
 }
