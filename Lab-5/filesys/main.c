@@ -18,9 +18,9 @@ volatile xQueueHandle serial_str_queue = NULL;
 volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
 volatile xQueueHandle serial_rx_queue = NULL;
 
-extern char* _sromfs_at_fl;
-extern char* _sromfs;
-extern char* _eromfs;
+extern char _sromfs_at_fl;
+extern char _sromfs;
+extern char _eromfs;
 
 /* Queue structure used for passing messages. */
 typedef struct {
@@ -260,16 +260,14 @@ int main()
 	register_romfs("rom", sromfs);                  // register filesystem handle
 	register_devfs();
 
-    // cannot use while , _eromfs = 0x200004e3 <--
-    // don't know why uint8_t* gets word aligned address
-//    while( (&_sromfs+i) != (&_eromfs) ){
-//        *(&_sromfs + i) = *(&_sromfs_at_fl + i);
-//        i++;
-//    }
-    while( ((uint8_t*)(&_sromfs)+i) != ((uint8_t*)&_eromfs) ){
-        *((uint8_t*)(&_sromfs) + i) = *((uint8_t*)(&_sromfs_at_fl) + i);
+    while( (&_sromfs+i) != (&_eromfs) ){
+        *(&_sromfs + i) = *(&_sromfs_at_fl + i);
         i++;
     }
+//    while( ((uint8_t*)(&_sromfs)+i) != ((uint8_t*)&_eromfs) ){
+//        *((uint8_t*)(&_sromfs) + i) = *((uint8_t*)(&_sromfs_at_fl) + i);
+//        i++;
+//    }
 
 //    for(i=0; i< (&_eromfs - &_sromfs); i++){
 //        *( (&_sromfs)+i) = *( (&_sromfs_at_fl)+i);
