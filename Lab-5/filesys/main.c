@@ -224,9 +224,10 @@ void read_file_task(void *pvParameters)
 		romfs_handle = fs_open("/rom/test.txt", 0, O_RDONLY);
 		read_count = fio_read(romfs_handle, buf_ptr, 20);
 		fio_write(devfs_handle, buf_ptr, read_count);
-		buf[0] = '\n';
-		buf[1] = '\r';
-		fio_write(devfs_handle, buf_ptr, 2);
+		buf[1] = '\n';
+		buf[2] = '\r';
+		buf[0] = (sizeof(&_sromfs) == sizeof(void *))? 'y':'n';
+		fio_write(devfs_handle, buf_ptr, 3);
 		vTaskDelay(150);
 	}
 	fio_close(romfs_handle);
@@ -265,10 +266,14 @@ int main()
 //        *(&_sromfs + i) = *(&_sromfs_at_fl + i);
 //        i++;
 //    }
-
-    for(i=0; i< (&_eromfs - &_sromfs); i++){
-        *( (&_sromfs)+i) = *( (&_sromfs_at_fl)+i);
+    while( ((uint8_t*)(&_sromfs)+i) != ((uint8_t*)&_eromfs) ){
+        *((uint8_t*)(&_sromfs) + i) = *((uint8_t*)(&_sromfs_at_fl) + i);
+        i++;
     }
+
+//    for(i=0; i< (&_eromfs - &_sromfs); i++){
+//        *( (&_sromfs)+i) = *( (&_sromfs_at_fl)+i);
+//    }
 
 //    while( (sromfs_cpy+i) != (eromfs_cpy) ){
 //        *(sromfs_cpy + i) = *(sromfs_at_fl_cpy + i);
