@@ -23,7 +23,7 @@ SECTIONS
 		_sdata = .;
 		*(.data)		/* Initialized data */
 		_edata = .;
-		_sromfs = .;
+        _sromfs = .;
 		*(.romfs.data)
 		_eromfs = .;
 	} >RAM

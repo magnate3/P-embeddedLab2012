@@ -19,6 +19,8 @@ volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
 volatile xQueueHandle serial_rx_queue = NULL;
 
 extern char* _sromfs_at_fl;
+extern char* _sromfs;
+extern char* _eromfs;
 
 /* Queue structure used for passing messages. */
 typedef struct {
@@ -234,7 +236,15 @@ void read_file_task(void *pvParameters)
 
 int main()
 {
-	uint8_t* sromfs  = &_sromfs_at_fl;
+//	uint8_t* sromfs  = &_sromfs_at_fl;
+	uint8_t* sromfs  = &_sromfs;
+//	uint8_t* sromfs_cpy  = &_sromfs;
+//	uint8_t* eromfs_cpy  = &_eromfs;
+//	uint8_t* sromfs_at_fl_cpy  = &_sromfs_at_fl;
+    uint16_t  i=0;
+
+
+
 	init_led();
 
 //	init_button();
@@ -246,9 +256,24 @@ int main()
 
 	fs_init();
 
-	register_romfs("rom", sromfs);
+	register_romfs("rom", sromfs);                  // register filesystem handle
 	register_devfs();
 
+    // cannot use while , _eromfs = 0x200004e3 <--
+    // don't know why uint8_t* gets word aligned address
+//    while( (&_sromfs+i) != (&_eromfs) ){
+//        *(&_sromfs + i) = *(&_sromfs_at_fl + i);
+//        i++;
+//    }
+
+    for(i=0; i< (&_eromfs - &_sromfs); i++){
+        *( (&_sromfs)+i) = *( (&_sromfs_at_fl)+i);
+    }
+
+//    while( (sromfs_cpy+i) != (eromfs_cpy) ){
+//        *(sromfs_cpy + i) = *(sromfs_at_fl_cpy + i);
+//        i++;
+//    }
 
 	/* Create the queue used by the serial task.  Messages for write to
 	 * the RS232. */
