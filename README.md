@@ -1,5 +1,7 @@
-# P-embeddedLab2012
+# embeddedLab 
 homework of http://wiki.csie.ncku.edu.tw/embedded/schedule at section 2012
+
+embedded2013  https://github.com/embedded2013
 
 # os
 
