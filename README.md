@@ -31,6 +31,9 @@ LED On
 
 # 参考资料
 [在樹莓派上開發微型的作業系統(MiniOS for Raspberry Pi)](https://yunlinsong.blogspot.com/2019/05/minios-for-raspberry-pi.html)
+
 [1] https://jsandler18.github.io/
+
 [2] https://github.com/bztsrc/raspi3-tutorial
+
 [3] https://github.com/s-matyukevich/raspberry-pi-os
